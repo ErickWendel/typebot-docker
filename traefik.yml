@@ -1,0 +1,44 @@
+api:
+  insecure: true
+  dashboard: true
+
+log:
+  level: DEBUG
+
+providers:
+  docker:
+    watch: true
+    exposedByDefault: false
+  file:
+    directory: /etc/traefik/config
+    watch: true
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+
+  port8082:
+    address: ":8082"
+    http:
+      tls:
+        certResolver: myresolver
+
+  port8081:
+    address: ":8081"
+    http:
+      tls:
+        certResolver: myresolver  
+
+certificatesResolvers:
+  myresolver:
+    acme:
+      email: "erick.test@gmail.com"
+      storage: "/letsencrypt/acme.json"
+      tlsChallenge: {}

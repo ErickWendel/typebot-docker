@@ -1,0 +1,69 @@
+services:
+  traefik:
+    image: "traefik:v3.2"
+    container_name: "traefik"
+    command:
+      - "--configfile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8081:8081"
+      - "8082:8082"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "./traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  typebot-db:
+    image: postgres:16
+    restart: always
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U postgres"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+
+  typebot-builder:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.typebot-builder.rule=Host(`${DOMAIN}`)"
+
+      - "traefik.http.routers.typebot-builder.entrypoints=port8081"
+      - "traefik.http.routers.typebot-builder.tls.certresolver=myresolver"
+      - "traefik.http.services.typebot-builder.loadbalancer.server.port=3000"
+
+    image: baptistearno/typebot-builder:latest
+    depends_on:
+      typebot-db:
+        condition: service_healthy
+    restart: always
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      - .env
+
+  typebot-viewer:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.typebot-viewer.rule=Host(`${DOMAIN}`)"
+
+      - "traefik.http.routers.typebot-viewer.entrypoints=port8082"
+      - "traefik.http.routers.typebot-viewer.tls.certresolver=myresolver"
+      - "traefik.http.services.typebot-viewer.loadbalancer.server.port=3000"
+
+    image: baptistearno/typebot-viewer:latest
+    depends_on:
+      typebot-db:
+        condition: service_healthy
+    restart: always
+    env_file:
+      - .env
+
+volumes:
+  db-data:
+  s3-data:
