@@ -1,3 +1,6 @@
 https://docs.typebot.io/self-hosting/deploy/docker
 https://docs.typebot.io/self-hosting/configuration
 https://console.cloud.google.com/apis/credentials
+
+https://github.com/baptistearno/typebot.io/blob/main/LICENSE#L32
+https://typebot.io/pricing
